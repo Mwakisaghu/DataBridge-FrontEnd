@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { SyncOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { addMigration, updateStats } from "/src/redux/migrationsSlice.js";
 import { v4 as uuidv4 } from 'uuid';
+import TopNavBar from '../components/TopNavBar';
 
 const { Content } = Layout;
 const { Title } = Typography;
@@ -26,9 +27,8 @@ const Dashboard = () => {
 
   return (
     <Layout>
+      <TopNavBar /> {/* Top Navigation Bar Integrated Here */}
       <Content style={{ padding: '20px' }}>
-        <Title level={2}>Data Migration Dashboard</Title>
-
         {/* Stats Cards */}
         <Space style={{ display: 'flex', marginBottom: '20px' }}>
           <Card>
