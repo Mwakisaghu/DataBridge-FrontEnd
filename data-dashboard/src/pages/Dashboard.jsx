@@ -5,7 +5,7 @@ import { addMigration, updateStats } from "/src/redux/migrationsSlice.js";
 import { v4 as uuidv4 } from 'uuid';
 import TopNavBar from '../components/TopNavBar';
 
-const { Content } = Layout;
+const { Content, Footer } = Layout;
 const { Title } = Typography;
 
 const Dashboard = () => {
@@ -28,7 +28,7 @@ const Dashboard = () => {
   return (
     <Layout>
       <TopNavBar />
-      <Content style={{ padding: '20px' }}>
+      <Content style={{ padding: '20px', minHeight: 'calc(100vh - 64px - 70px)' }}>
         {/* Stats Cards */}
         <Space style={{ display: 'flex', marginBottom: '20px' }}>
           <Card>
@@ -51,22 +51,24 @@ const Dashboard = () => {
           <Button onClick={() => handleMigration('Update Table')}>Update Table</Button>
         </Space>
 
-{/* Logs Section */}
-<Card title="Migration Logs">
-  <div style={{ maxHeight: '380px', overflowY: 'auto' }}>
-    <List
-      bordered
-      dataSource={logs}
-      renderItem={(item) => (
-        <List.Item style={{ color: item.status === 'success' ? 'green' : 'red' }}>
-          {item.message}
-        </List.Item>
-      )}
-    />
-  </div>
-</Card>
-
+        {/* Logs Section */}
+        <Card title="Migration Logs">
+          <div style={{ maxHeight: '380px', overflowY: 'auto' }}>
+            <List
+              bordered
+              dataSource={logs}
+              renderItem={(item) => (
+                <List.Item style={{ color: item.status === 'success' ? 'green' : 'red' }}>
+                  {item.message}
+                </List.Item>
+              )}
+            />
+          </div>
+        </Card>
       </Content>
+      <Footer style={{ textAlign: 'center' }}>
+        © {new Date().getFullYear()} DataBridge Dashboard. All rights reserved.
+      </Footer>
     </Layout>
   );
 };
