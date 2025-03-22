@@ -53,7 +53,7 @@ const Dashboard = () => {
 
         {/* Logs Section */}
         <Card title="Migration Logs">
-          <div style={{ maxHeight: '380px', overflowY: 'auto' }}>
+          <div style={{ maxHeight: '350px', overflowY: 'auto' }}>
             <List
               bordered
               dataSource={logs}
@@ -66,9 +66,6 @@ const Dashboard = () => {
           </div>
         </Card>
       </Content>
-      <Footer style={{ textAlign: 'center' }}>
-        © {new Date().getFullYear()} DataBridge Dashboard. All rights reserved.
-      </Footer>
     </Layout>
   );
 };
