@@ -27,7 +27,7 @@ const Dashboard = () => {
 
   return (
     <Layout>
-      <TopNavBar /> {/* Top Navigation Bar Integrated Here */}
+      <TopNavBar />
       <Content style={{ padding: '20px' }}>
         {/* Stats Cards */}
         <Space style={{ display: 'flex', marginBottom: '20px' }}>
@@ -51,18 +51,21 @@ const Dashboard = () => {
           <Button onClick={() => handleMigration('Update Table')}>Update Table</Button>
         </Space>
 
-        {/* Logs Section */}
-        <Card title="Migration Logs">
-          <List
-            bordered
-            dataSource={logs}
-            renderItem={(item) => (
-              <List.Item style={{ color: item.status === 'success' ? 'green' : 'red' }}>
-                {item.message}
-              </List.Item>
-            )}
-          />
-        </Card>
+{/* Logs Section */}
+<Card title="Migration Logs">
+  <div style={{ maxHeight: '380px', overflowY: 'auto' }}>
+    <List
+      bordered
+      dataSource={logs}
+      renderItem={(item) => (
+        <List.Item style={{ color: item.status === 'success' ? 'green' : 'red' }}>
+          {item.message}
+        </List.Item>
+      )}
+    />
+  </div>
+</Card>
+
       </Content>
     </Layout>
   );
