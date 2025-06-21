@@ -12,7 +12,7 @@ const Sidebar = () => {
           <Link to="/">Dashboard</Link>
         </Menu.Item>
         <Menu.Item key="2" icon={<DatabaseOutlined />}>
-          <Link to="/migrations">Validation</Link>
+          <Link to="/validations">Validation</Link>
         </Menu.Item>
         <Menu.Item key="3" icon={<FileTextOutlined />}>
           <Link to="/logs">Logs</Link>
