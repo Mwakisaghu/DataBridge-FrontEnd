@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { Card, Table, Tag, Typography, Button, Switch, Select } from "antd";
-import { DeleteOutlined, BulbOutlined, FilterOutlined } from "@ant-design/icons";
+import { useEffect, useState } from "react";
+import { Card, Table, Tag, Typography, Button, Switch, Select, message } from "antd";
+import { DeleteOutlined, BulbOutlined, ReloadOutlined } from "@ant-design/icons";
+import axios from "axios";
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -8,12 +9,7 @@ const { Option } = Select;
 const Logs = () => {
   const [darkMode, setDarkMode] = useState(false);
   const [filter, setFilter] = useState("all");
-  const [logs, setLogs] = useState([
-    { key: 1, level: "info", message: "User logged in", timestamp: "2025-03-21 10:00:00" },
-    { key: 2, level: "error", message: "Failed to fetch data", timestamp: "2025-03-21 10:05:00" },
-    { key: 3, level: "warning", message: "Password attempt limit reached", timestamp: "2025-03-21 10:10:00" },
-    { key: 4, level: "info", message: "Data export successful", timestamp: "2025-03-21 10:15:00" },
-  ]);
+  const [logs, setLogs] = useState([]);
 
   const logColors = {
     info: "blue",
@@ -21,26 +17,67 @@ const Logs = () => {
     warning: "orange",
   };
 
-  const filteredLogs = filter === "all" ? logs : logs.filter(log => log.level === filter);
+  const fetchLogs = async () => {
+    try {
+      const res = await axios.get("http://localhost:8081/logs");
+      const data = res.data.map((log, index) => ({
+        key: index + 1,
+        ...log,
+      }));
+      setLogs(data);
+    } catch (err) {
+      message.error("Failed to fetch logs");
+      console.error(err);
+    }
+  };
 
-  const handleClearLogs = () => setLogs([]);
+  const clearLogs = async () => {
+    try {
+      await axios.post("http://localhost:8081/logs/clear");
+      setLogs([]);
+      message.success("Logs cleared");
+    } catch (err) {
+      message.error("Failed to clear logs");
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    fetchLogs();
+  }, []);
+
+  const filteredLogs = filter === "all" ? logs : logs.filter(log => log.level === filter);
 
   return (
     <div style={{ padding: "20px", backgroundColor: darkMode ? "#1e1e1e" : "#fff", color: darkMode ? "#fff" : "#000" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Title level={2} style={{ margin: 0 }}>System Logs</Title>
-        <Switch checkedChildren={<BulbOutlined />} unCheckedChildren={<BulbOutlined />} onChange={() => setDarkMode(!darkMode)} />
+        <Switch
+          checkedChildren={<BulbOutlined />}
+          unCheckedChildren={<BulbOutlined />}
+          onChange={() => setDarkMode(!darkMode)}
+        />
       </div>
 
       <Card style={{ marginTop: "20px", backgroundColor: darkMode ? "#333" : "#fff" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-          <Select value={filter} onChange={setFilter} style={{ width: 150 }}>
-            <Option value="all">All Logs</Option>
-            <Option value="info">Info</Option>
-            <Option value="error">Error</Option>
-            <Option value="warning">Warning</Option>
-          </Select>
-          <Button type="danger" icon={<DeleteOutlined />} onClick={handleClearLogs} disabled={logs.length === 0}>Clear Logs</Button>
+          <div style={{ display: "flex", gap: "10px" }}>
+            <Select value={filter} onChange={setFilter} style={{ width: 150 }}>
+              <Option value="all">All Logs</Option>
+              <Option value="info">Info</Option>
+              <Option value="error">Error</Option>
+              <Option value="warning">Warning</Option>
+            </Select>
+            <Button icon={<ReloadOutlined />} onClick={fetchLogs}>Refresh</Button>
+          </div>
+          <Button
+            type="danger"
+            icon={<DeleteOutlined />}
+            onClick={clearLogs}
+            disabled={logs.length === 0}
+          >
+            Clear Logs
+          </Button>
         </div>
 
         <div style={{ maxHeight: "400px", overflow: "auto" }}>
@@ -56,7 +93,7 @@ const Logs = () => {
                 title: "Level",
                 dataIndex: "level",
                 key: "level",
-                render: level => <Tag color={logColors[level]}>{level.toUpperCase()}</Tag>,
+                render: level => <Tag color={logColors[level] || "gray"}>{level.toUpperCase()}</Tag>,
               },
               {
                 title: "Message",

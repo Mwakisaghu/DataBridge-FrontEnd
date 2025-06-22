@@ -180,7 +180,6 @@ const Validations = () => {
             <>
               <Text strong>Total Rows: {fileData.length}</Text>
 
-              {/* 👇 Data Type Selector Added Here */}
               <div style={{ margin: "20px 0" }}>
                 <Text>Select Validation Type:</Text>
                 <Select
@@ -190,7 +189,6 @@ const Validations = () => {
                   options={[
                     { label: "Members", value: "members" },
                     { label: "Chart of Accounts", value: "chart-of-accounts" },
-                    // Add more here if needed
                   ]}
                 />
               </div>
