@@ -9,6 +9,7 @@ import {
   Spin,
   Progress,
   Switch,
+  Select,
 } from "antd";
 import {
   InboxOutlined,
@@ -29,6 +30,7 @@ const Validations = () => {
   const [progress, setProgress] = useState(0);
   const [darkMode, setDarkMode] = useState(false);
   const [validationResults, setValidationResults] = useState(null);
+  const [dataType, setDataType] = useState("members");
 
   // Handle File Upload
   const handleUpload = (info) => {
@@ -95,7 +97,9 @@ const Validations = () => {
     const reader = new FileReader();
     reader.onload = async (e) => {
       try {
-        const response = await fetch("http://localhost:8081/validate/members", {
+        const endpoint = `http://localhost:8081/validate/${dataType}`;
+
+        const response = await fetch(endpoint, {
           method: "POST",
           headers: {
             "Content-Type": "application/octet-stream",
@@ -175,6 +179,22 @@ const Validations = () => {
           ) : (
             <>
               <Text strong>Total Rows: {fileData.length}</Text>
+
+              {/* 👇 Data Type Selector Added Here */}
+              <div style={{ margin: "20px 0" }}>
+                <Text>Select Validation Type:</Text>
+                <Select
+                  style={{ width: 300, marginLeft: 10 }}
+                  value={dataType}
+                  onChange={(value) => setDataType(value)}
+                  options={[
+                    { label: "Members", value: "members" },
+                    { label: "Chart of Accounts", value: "chart-of-accounts" },
+                    // Add more here if needed
+                  ]}
+                />
+              </div>
+
               <div style={{ maxHeight: "400px", overflow: "auto", border: "1px solid #ddd", padding: "10px" }}>
                 <Table
                   dataSource={fileData}
