@@ -189,7 +189,8 @@ const Validations = () => {
                   options={[
                     { label: "Members", value: "members" },
                     { label: "Chart of Accounts", value: "chart-of-accounts" },
-                    {label: "Nominees", value: "nominees"}
+                    {label: "Nominees", value: "nominees"},
+                    {label: "Customers", value: "customers"},
                   ]}
                 />
               </div>
