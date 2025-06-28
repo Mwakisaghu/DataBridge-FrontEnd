@@ -273,21 +273,35 @@ const Validations = () => {
 
           <div style={{ marginTop: 10 }}>
             <Text>Select Validation Type:</Text>
-            <Select
-              style={{ width: 300, marginLeft: 10 }}
-              value={dataType}
-              onChange={setDataType}
-              options={[
-                { label: "Members", value: "members" },
-                { label: "Chart of Accounts", value: "chart-of-accounts" },
-                { label: "Nominees", value: "nominees" },
-                { label: "Customers", value: "customers" },
-                { label: "Vendors", value: "vendors" },
-                { label: "BNK", value: "bank-accounts" },
-                { label: "Fixed Assets", value: "fixed-assets" },
-                { label: "Standing Orders", value: "standing-orders" },
-              ]}
-            />
+            {validationMode === "single" ? (
+              <Select
+                style={{ width: 300, marginLeft: 10 }}
+                value={dataType}
+                onChange={setDataType}
+                options={[
+                  { label: "Members", value: "members" },
+                  { label: "Chart of Accounts", value: "chart-of-accounts" },
+                  { label: "Nominees", value: "nominees" },
+                  { label: "Customers", value: "customers" },
+                  { label: "Vendors", value: "vendors" },
+                  { label: "BNK", value: "bank-accounts" },
+                  { label: "Fixed Assets", value: "fixed-assets" },
+                  { label: "Standing Orders", value: "standing-orders" },
+                ]}
+              />
+            ) : (
+              <Select
+                style={{ width: 300, marginLeft: 10 }}
+                value={dataType}
+                onChange={setDataType}
+                options={[
+                  { label: "Cross Check - Members vs Customers", value: "members-customers" },
+                  { label: "Cross Check - Chart vs Vendors", value: "chart-vendors" },
+                  { label: "Cross Check - Fixed Assets vs Accounts", value: "assets-accounts" },
+                  { label: "Cross Check - Bank vs Nominees", value: "bank-nominees" },
+                ]}
+              />
+            )}
           </div>
 
           {(validationMode === "single" || fileDataA.length > 0) && (
