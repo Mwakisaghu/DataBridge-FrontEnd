@@ -38,6 +38,7 @@ const Validations = () => {
   const [fileA, setFileA] = useState(null);
   const [fileB, setFileB] = useState(null);
   const [fileDataA, setFileDataA] = useState([]);
+  const [fileDataB, setFileDataB] = useState([]);
 
   const handleUpload = (info) => {
     const file = info.file.originFileObj || info.file;
@@ -62,6 +63,7 @@ const Validations = () => {
     const file = info.file.originFileObj || info.file;
     if (!file) return;
     setFileB(file);
+    parseExcel(file, setFileDataB);
   };
 
   const parseExcel = (file, setDataCallback) => {
@@ -189,6 +191,7 @@ const Validations = () => {
     setFileA(null);
     setFileB(null);
     setFileDataA([]);
+    setFileDataB([]);
     setProgress(0);
   };
 
@@ -273,12 +276,18 @@ const Validations = () => {
         </>
       )}
 
-      {(fileData.length > 0 || fileDataA.length > 0) && (
+      {(fileData.length > 0 || fileDataA.length > 0 || fileDataB.length > 0) && (
         <Card
           title="Uploaded File Preview"
           style={{ marginTop: 20, backgroundColor: darkMode ? "#333" : "#fff" }}
         >
-          <Text strong>Total Rows: {validationMode === "single" ? fileData.length : fileDataA.length}</Text>
+          <Text strong>
+            Total Rows:{" "}
+            {validationMode === "single"
+              ? fileData.length
+              : `${fileDataA.length} (File A), ${fileDataB.length} (File B)`}
+          </Text>
+
           <div style={{ marginTop: 10 }}>
             <Text>Select Validation Type:</Text>
             <Select
@@ -298,18 +307,45 @@ const Validations = () => {
             />
           </div>
 
-          <div style={{ marginTop: 20, maxHeight: 400, overflow: "auto", border: "1px solid #ddd", padding: 10 }}>
-            <Table
-              dataSource={validationMode === "single" ? fileData : fileDataA}
-              columns={Object.keys((validationMode === "single" ? fileData[0] : fileDataA[0]) || {}).map((col) => ({
-                title: col,
-                dataIndex: col,
-                key: col,
-              }))}
-              pagination={{ pageSize: 5 }}
-              scroll={{ x: true }}
-            />
-          </div>
+          {/* File A preview */}
+          {validationMode === "single" || fileDataA.length > 0 ? (
+            <div style={{ marginTop: 20 }}>
+              <Text strong>{validationMode === "single" ? "File Data" : "File A"}</Text>
+              <div style={{ maxHeight: 400, overflow: "auto", border: "1px solid #ddd", padding: 10 }}>
+                <Table
+                  dataSource={validationMode === "single" ? fileData : fileDataA}
+                  columns={Object.keys((validationMode === "single" ? fileData[0] : fileDataA[0]) || {}).map(
+                    (col) => ({
+                      title: col,
+                      dataIndex: col,
+                      key: col,
+                    })
+                  )}
+                  pagination={{ pageSize: 5 }}
+                  scroll={{ x: true }}
+                />
+              </div>
+            </div>
+          ) : null}
+
+          {/* File B preview (only in cross mode) */}
+          {validationMode === "cross" && fileDataB.length > 0 && (
+            <div style={{ marginTop: 20 }}>
+              <Text strong>File B</Text>
+              <div style={{ maxHeight: 400, overflow: "auto", border: "1px solid #ddd", padding: 10 }}>
+                <Table
+                  dataSource={fileDataB}
+                  columns={Object.keys(fileDataB[0] || {}).map((col) => ({
+                    title: col,
+                    dataIndex: col,
+                    key: col,
+                  }))}
+                  pagination={{ pageSize: 5 }}
+                  scroll={{ x: true }}
+                />
+              </div>
+            </div>
+          )}
 
           <div style={{ marginTop: 20, display: "flex", gap: 10 }}>
             <Button
@@ -334,10 +370,7 @@ const Validations = () => {
       {validationResults && (
         <Card
           title="Validation Errors"
-          style={{
-            marginTop: 20,
-            backgroundColor: darkMode ? "#444" : "#fafafa",
-          }}
+          style={{ marginTop: 20, backgroundColor: darkMode ? "#444" : "#fafafa" }}
         >
           <ul>
             {Object.entries(validationResults).map(([row, errors]) => (
