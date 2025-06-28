@@ -1,6 +1,24 @@
 import { useEffect, useState } from "react";
-import { Card, Table, Tag, Typography, Button, Switch, Select, message } from "antd";
-import { DeleteOutlined, BulbOutlined, ReloadOutlined } from "@ant-design/icons";
+import {
+  Card,
+  Table,
+  Tag,
+  Typography,
+  Button,
+  Switch,
+  Select,
+  message,
+  Statistic,
+  Space,
+} from "antd";
+import {
+  DeleteOutlined,
+  BulbOutlined,
+  ReloadOutlined,
+  InfoCircleOutlined,
+  WarningOutlined,
+  CloseCircleOutlined,
+} from "@ant-design/icons";
 import axios from "axios";
 
 const { Title } = Typography;
@@ -46,12 +64,24 @@ const Logs = () => {
     fetchLogs();
   }, []);
 
-  const filteredLogs = filter === "all" ? logs : logs.filter(log => log.level === filter);
+  const filteredLogs = filter === "all" ? logs : logs.filter((log) => log.level === filter);
+
+  const errorCount = logs.filter((log) => log.level === "error").length;
+  const infoCount = logs.filter((log) => log.level === "info").length;
+  const warningCount = logs.filter((log) => log.level === "warning").length;
 
   return (
-    <div style={{ padding: "20px", backgroundColor: darkMode ? "#1e1e1e" : "#fff", color: darkMode ? "#fff" : "#000" }}>
+    <div
+      style={{
+        padding: "20px",
+        backgroundColor: darkMode ? "#1e1e1e" : "#fff",
+        color: darkMode ? "#fff" : "#000",
+      }}
+    >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <Title level={2} style={{ margin: 0 }}>System Logs</Title>
+        <Title level={2} style={{ margin: 0 }}>
+          System Logs
+        </Title>
         <Switch
           checkedChildren={<BulbOutlined />}
           unCheckedChildren={<BulbOutlined />}
@@ -59,19 +89,47 @@ const Logs = () => {
         />
       </div>
 
-      <Card style={{ marginTop: "20px", backgroundColor: darkMode ? "#333" : "#fff" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-          <div style={{ display: "flex", gap: "10px" }}>
+      {/* Log Summary Dashboard */}
+      <Space size="large" style={{ margin: "20px 0", flexWrap: "wrap" }}>
+        <Card>
+          <Statistic title="Total Logs" value={logs.length} />
+        </Card>
+        <Card>
+          <Statistic title="Info Logs" value={infoCount} prefix={<InfoCircleOutlined />} valueStyle={{ color: "#1890ff" }} />
+        </Card>
+        <Card>
+          <Statistic title="Warnings" value={warningCount} prefix={<WarningOutlined />} valueStyle={{ color: "#faad14" }} />
+        </Card>
+        <Card>
+          <Statistic title="Errors" value={errorCount} prefix={<CloseCircleOutlined />} valueStyle={{ color: "#f5222d" }} />
+        </Card>
+      </Space>
+
+      <Card style={{ backgroundColor: darkMode ? "#333" : "#fff" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "10px",
+            flexWrap: "wrap",
+            gap: "10px",
+          }}
+        >
+          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
             <Select value={filter} onChange={setFilter} style={{ width: 150 }}>
               <Option value="all">All Logs</Option>
               <Option value="info">Info</Option>
-              <Option value="error">Error</Option>
               <Option value="warning">Warning</Option>
+              <Option value="error">Error</Option>
             </Select>
-            <Button icon={<ReloadOutlined />} onClick={fetchLogs}>Refresh</Button>
+            <Button icon={<ReloadOutlined />} onClick={fetchLogs}>
+              Refresh
+            </Button>
           </div>
           <Button
-            type="danger"
+            type="primary"
+            danger
             icon={<DeleteOutlined />}
             onClick={clearLogs}
             disabled={logs.length === 0}
@@ -93,7 +151,9 @@ const Logs = () => {
                 title: "Level",
                 dataIndex: "level",
                 key: "level",
-                render: level => <Tag color={logColors[level] || "gray"}>{level.toUpperCase()}</Tag>,
+                render: (level) => (
+                  <Tag color={logColors[level] || "gray"}>{level.toUpperCase()}</Tag>
+                ),
               },
               {
                 title: "Message",
@@ -101,10 +161,29 @@ const Logs = () => {
                 key: "message",
               },
             ]}
-            pagination={false}
+            pagination={{ pageSize: 10 }}
+            rowClassName={(record) =>
+              record.level === "error"
+                ? "log-row-error"
+                : record.level === "warning"
+                ? "log-row-warning"
+                : ""
+            }
           />
         </div>
       </Card>
+
+      {/* Custom row highlight styles */}
+      <style>
+        {`
+          .log-row-error {
+            background-color: #fff1f0 !important;
+          }
+          .log-row-warning {
+            background-color: #fffbe6 !important;
+          }
+        `}
+      </style>
     </div>
   );
 };
