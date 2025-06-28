@@ -11,6 +11,7 @@ import {
   Switch,
   Select,
   Radio,
+  Statistic,
 } from "antd";
 import {
   InboxOutlined,
@@ -194,6 +195,14 @@ const Validations = () => {
     setProgress(0);
   };
 
+  const totalRows =
+    validationMode === "single"
+      ? fileData.length
+      : fileDataA.length + fileDataB.length;
+
+  const errorCount = Object.keys(validationResults || {}).length;
+  const passRate = totalRows > 0 ? Math.round(((totalRows - errorCount) / totalRows) * 100) : 0;
+
   return (
     <div style={{ padding: 20, backgroundColor: darkMode ? "#1e1e1e" : "#fff", color: darkMode ? "#fff" : "#000" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -268,7 +277,7 @@ const Validations = () => {
       {(fileData.length > 0 || fileDataA.length > 0 || fileDataB.length > 0) && (
         <Card title="Uploaded File Preview" style={{ marginTop: 20, backgroundColor: darkMode ? "#333" : "#fff" }}>
           <Text strong>
-            Total Rows: {validationMode === "single" ? fileData.length : `${fileDataA.length} (File A), ${fileDataB.length} (File B)`}
+            Total Rows: {totalRows}
           </Text>
 
           <div style={{ marginTop: 10 }}>
@@ -304,6 +313,7 @@ const Validations = () => {
             )}
           </div>
 
+          {/* File previews */}
           {(validationMode === "single" || fileDataA.length > 0) && (
             <div style={{ marginTop: 20 }}>
               <Text strong>{validationMode === "single" ? "File Data" : "File A"}</Text>
@@ -352,15 +362,26 @@ const Validations = () => {
       )}
 
       {validationResults && (
-        <Card title="Validation Errors" style={{ marginTop: 20, backgroundColor: darkMode ? "#444" : "#fafafa" }}>
-          <ul>
-            {Object.entries(validationResults).map(([row, errors]) => (
-              <li key={row}>
-                <strong>Row {row}:</strong> {errors.join(", ")}
-              </li>
-            ))}
-          </ul>
-        </Card>
+        <>
+          <Card title="Validation Summary" style={{ marginTop: 20, backgroundColor: darkMode ? "#444" : "#f6ffed" }}>
+            <Statistic title="Total Rows Validated" value={totalRows} />
+            <Statistic title="Rows with Errors" value={errorCount} valueStyle={{ color: "#cf1322" }} />
+            <div style={{ marginTop: 10 }}>
+              <Text strong>Pass Rate </Text>
+              <Progress type="circle" percent={passRate} strokeColor={passRate >= 80 ? "#3f8600" : "#cf1322"} />
+            </div>
+          </Card>
+
+          <Card title="Validation Errors" style={{ marginTop: 20, backgroundColor: darkMode ? "#444" : "#fafafa" }}>
+            <ul>
+              {Object.entries(validationResults).map(([row, errors]) => (
+                <li key={row}>
+                  <strong>Row {row}:</strong> {errors.join(", ")}
+                </li>
+              ))}
+            </ul>
+          </Card>
+        </>
       )}
     </div>
   );
