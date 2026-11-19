@@ -1,36 +1,40 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { Layout } from "antd";
-import Sidebar from "./components/Sidebar";
-import Dashboard from "./pages/Dashboard";
-import Reports from "./pages/Reports";
-import Validations from "./pages/Validations";
-import Logs from "./pages/Logs";
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { App as AntApp, ConfigProvider, Layout } from 'antd'
+import Sidebar from './components/Sidebar'
+import TopBar from './components/TopBar'
+import ControlCentre from './pages/ControlCentre'
+import Intake from './pages/Intake'
+import SetupPage from './pages/Setup'
+import Audit from './pages/Audit'
+import { theme } from './theme'
 
-const { Content, Footer } = Layout;
+const { Content } = Layout
 
-const App = () => {
+export default function App() {
   return (
-    <Router>
-      <Layout style={{ minHeight: "100vh" }}>
-        <Sidebar /> {/* Sidebar Navigation */}
-        
-        <Layout style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
-          <Content style={{ flex: 1, padding: "20px", overflow: "auto" }}>
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/reports" element={<Reports />} />
-              <Route path="/validations" element={<Validations />} />
-              <Route path="/logs" element={<Logs />} />
-            </Routes>
-          </Content>
-
-          <Footer style={{ textAlign: "center", background: "#f0f2f5", padding: "10px" }}>
-            © {new Date().getFullYear()} hmc . All Rights Reserved.
-          </Footer>
-        </Layout>
-      </Layout>
-    </Router>
-  );
-};
-
-export default App;
+    <ConfigProvider theme={theme}>
+      <AntApp>
+        <BrowserRouter>
+          <Layout style={{ minHeight: '100vh' }}>
+            <Sidebar />
+            <Layout>
+              <TopBar />
+              <Content>
+                <Routes>
+                  <Route path="/" element={<ControlCentre />} />
+                  <Route path="/intake" element={<Intake />} />
+                  <Route path="/setup" element={<SetupPage />} />
+                  <Route path="/audit" element={<Audit />} />
+                  {/* Old addresses from the first prototype */}
+                  <Route path="/validations" element={<Navigate to="/intake" replace />} />
+                  <Route path="/logs" element={<Navigate to="/audit" replace />} />
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </Content>
+            </Layout>
+          </Layout>
+        </BrowserRouter>
+      </AntApp>
+    </ConfigProvider>
+  )
+}
