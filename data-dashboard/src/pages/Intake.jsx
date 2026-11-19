@@ -1,14 +1,17 @@
 import { useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
-import { Alert, App, Button, Card, Cascader, Descriptions, Drawer, Empty, Progress, Segmented, Space, Table, Tag, Typography, Upload } from 'antd'
+import { Link, useSearchParams } from 'react-router-dom'
+import { Alert, App, Button, Card, Cascader, Descriptions, Drawer, Empty, Progress, Select, Space, Table, Tag, Typography, Upload } from 'antd'
 import { InboxOutlined } from '@ant-design/icons'
 import PageHeader from '../components/PageHeader'
 import LoadError from '../components/LoadError'
 import useLoad from '../hooks/useLoad'
-import { getDatasets, getOverview, getSchema, uploadDataset } from '../api/databridge'
-import { bytes, day, kindLabel, runLabel, shortHash, when } from '../format'
+import { addSubmissionFile, cancelSubmission, getChecks, getDatasets, getOverview, getSchema, openSubmission, processSubmission } from '../api/databridge'
+import CheckSummary from '../components/CheckSummary'
+import { statusTag } from '../components/statusTags'
+import { bytes, day, kindFromName, kindLabel, runLabel, shortHash, when } from '../format'
 
 const kinds = Object.entries(kindLabel).map(([value, label]) => ({ value, label }))
+
 
 /** client > project > run options; closed runs can be viewed but not uploaded to. */
 function runOptions(overview) {
@@ -116,37 +119,14 @@ export function SheetResults({ sheets, onShowColumns }) {
   )
 }
 
-function UploadResult({ result, onShowColumns }) {
-  const d = result.dataset
+function DatasetResult({ r, onShowColumns }) {
+  const d = r.dataset
+  const ok = d.status === 'SUCCEEDED'
   return (
-    <Card style={{ marginTop: 24 }} title={`${d.fileName}, version ${d.versionNo}`}>
-      {result.ok ? (
-        <Alert
-          type={d.warningCount ? 'warning' : 'success'}
-          showIcon
-          style={{ marginBottom: 16 }}
-          message={`Read ${d.sheetCount} sheet${d.sheetCount === 1 ? '' : 's'}${d.warningCount ? ` with ${d.warningCount} warning${d.warningCount === 1 ? '' : 's'}` : ' with no warnings'}.`}
-          description={d.warningCount ? 'Open a sheet with warnings to see what to fix in the template or in Template Setup.' : 'The file itself has been destroyed; only its structure was kept.'}
-        />
-      ) : (
-        <Alert
-          type="error"
-          showIcon
-          style={{ marginBottom: 16 }}
-          message="This workbook could not be read. It is recorded as a failed upload."
-          description={d.error}
-        />
-      )}
-      <Descriptions size="small" column={{ xs: 1, md: 3 }} style={{ marginBottom: 16 }}>
-        <Descriptions.Item label="Template">{kindLabel[d.kind]}</Descriptions.Item>
-        <Descriptions.Item label="Size">{bytes(d.sizeBytes)}</Descriptions.Item>
-        <Descriptions.Item label="SHA-256">
-          {d.sha256 ? (
-            <Typography.Text className="db-code" copyable={{ text: d.sha256 }}>{shortHash(d.sha256)}</Typography.Text>
-          ) : '-'}
-        </Descriptions.Item>
-      </Descriptions>
-      {result.ok && <SheetResults sheets={result.sheets} onShowColumns={onShowColumns} />}
+    <Card size="small" style={{ marginTop: 16 }} title={`${kindLabel[d.kind]}: ${d.fileName}, version ${d.versionNo}`}
+      extra={<span className="db-code" style={{ whiteSpace: 'nowrap' }}>{bytes(d.sizeBytes)} · {shortHash(d.sha256)}</span>}>
+      {!ok && <Alert type="error" showIcon message="This workbook could not be read. It is recorded as a failed upload." description={d.error} />}
+      {ok && <SheetResults sheets={r.sheets} onShowColumns={(sheet) => onShowColumns(d.id, sheet)} />}
     </Card>
   )
 }
@@ -159,9 +139,10 @@ export default function Intake() {
   const overview = useMemo(() => overviewLoad.data || [], [overviewLoad.data])
   const target = runId ? findRun(overview, runId) : null
   const history = useLoad(() => (runId ? getDatasets(runId) : Promise.resolve([])), [runId])
+  const checks = useLoad(() => (runId ? getChecks(runId) : Promise.resolve([])), [runId])
 
-  const [kind, setKind] = useState('STATIC')
-  const [progress, setProgress] = useState(null)
+  const [files, setFiles] = useState([]) // [{ uid, file, kind }]
+  const [busy, setBusy] = useState(null) // { step, percent }
   const [result, setResult] = useState(null)
   const [drawer, setDrawer] = useState(null) // { datasetId, sheetName, schema }
 
@@ -174,21 +155,50 @@ export default function Intake() {
     }
   }
 
-  const upload = async ({ file, onSuccess, onError }) => {
+  const addFiles = (_file, list) => {
     setResult(null)
-    setProgress(0)
+    setFiles((prev) => {
+      const next = [...prev]
+      for (const f of list) {
+        const uid = `${f.name}|${f.size}|${f.lastModified}`
+        if (next.some((x) => x.uid === uid)) continue
+        next.push({ uid, file: f, kind: kindFromName(f.name) })
+      }
+      return next
+    })
+    return false // keep the files in the browser until "Validate"
+  }
+
+  const duplicateKinds = files.length !== new Set(files.map((f) => f.kind)).size
+
+  const validate = async () => {
+    setResult(null)
+    let sub
     try {
-      const r = await uploadDataset(runId, kind, file, setProgress)
+      setBusy({ step: 'Opening a workspace', percent: 0 })
+      sub = await openSubmission(runId)
+      for (let i = 0; i < files.length; i++) {
+        const f = files[i]
+        setBusy({ step: `Sending ${f.file.name}`, percent: Math.round((i / files.length) * 80) })
+        const received = await addSubmissionFile(sub.id, f.kind, f.file, (p) =>
+          setBusy({ step: `Sending ${f.file.name}`, percent: Math.round(((i + p / 100) / files.length) * 80) }))
+        if (received.error) message.warning(`${f.file.name}: ${received.error}`)
+      }
+      setBusy({ step: 'Reading and validating the workbooks together', percent: 90 })
+      const r = await processSubmission(sub.id)
       setResult(r)
-      if (r.ok) message.success(`${file.name} read as version ${r.dataset.versionNo}`)
-      else message.error(`${file.name} could not be read`)
-      onSuccess(r)
+      setFiles([])
+      const c = r.check
+      if (c.status === 'SUCCEEDED') message.success(`Check ${c.checkNo} passed`)
+      else if (c.status === 'FAILED') message.warning(`Check ${c.checkNo}: ${c.critical} Critical finding${c.critical === 1 ? '' : 's'}`)
+      else message.error(`Check ${c.checkNo} could not complete`)
       history.reload()
+      checks.reload()
     } catch (e) {
       message.error(e.message)
-      onError(e)
+      if (sub) cancelSubmission(sub.id).catch(() => {})
     } finally {
-      setProgress(null)
+      setBusy(null)
     }
   }
 
@@ -199,8 +209,8 @@ export default function Intake() {
   return (
     <div className="db-page">
       <PageHeader
-        title="Template intake"
-        description="Upload a client's filled-in templates to a run. DataBridge reads each sheet's structure, records it, and destroys the file."
+        title="Intake and validation"
+        description="Send a run's filled-in templates together. DataBridge reads and validates them as one set, including references between workbooks, records the findings with masked values, and destroys the files."
       />
       <LoadError error={overviewLoad.error} onRetry={overviewLoad.reload} />
 
@@ -221,63 +231,117 @@ export default function Intake() {
               showSearch
             />
           </div>
-          <div>
-            <Typography.Text strong style={{ display: 'block', marginBottom: 8 }}>Template</Typography.Text>
-            <div style={{ overflowX: 'auto' }}>
-              <Segmented options={kinds} value={kind} onChange={setKind} />
-            </div>
-          </div>
-          {closed && <Alert type="info" showIcon message="This run is closed. Its uploads are listed below; open a new run to upload more." />}
+          {closed && <Alert type="info" showIcon message="This run is closed. Its checks are listed below; open a new run to submit more." />}
           <Upload.Dragger
             accept=".xlsx,.xlsm"
-            multiple={false}
+            multiple
             showUploadList={false}
-            customRequest={upload}
-            disabled={!target || closed || progress !== null}
+            beforeUpload={addFiles}
+            disabled={!target || closed || busy !== null}
           >
             <p className="ant-upload-drag-icon"><InboxOutlined /></p>
             <p className="ant-upload-text">
-              {target ? `Drop the ${kindLabel[kind].toLowerCase()} data workbook here, or click to choose it` : 'Choose a run first'}
+              {target ? 'Drop the Static, Transactional and HR workbooks here, or click to choose them' : 'Choose a run first'}
             </p>
-            <p className="ant-upload-hint">Excel .xlsx or .xlsm. The file is streamed to a temporary workspace and destroyed after reading.</p>
+            <p className="ant-upload-hint">Send them together so references between workbooks are checked. Excel .xlsx or .xlsm.</p>
           </Upload.Dragger>
-          {progress !== null && <Progress percent={progress} status="active" />}
+
+          {files.length > 0 && (
+            <Table
+              rowKey="uid"
+              size="small"
+              pagination={false}
+              dataSource={files}
+              columns={[
+                { title: 'Workbook', key: 'name', render: (_, f) => f.file.name },
+                { title: 'Size', key: 'size', render: (_, f) => bytes(f.file.size), width: 100 },
+                {
+                  title: 'Template',
+                  key: 'kind',
+                  width: 200,
+                  render: (_, f) => (
+                    <Select aria-label={`Template for ${f.file.name}`} value={f.kind} options={kinds} style={{ width: 170 }}
+                      onChange={(k) => setFiles((prev) => prev.map((x) => (x.uid === f.uid ? { ...x, kind: k } : x)))} />
+                  ),
+                },
+                {
+                  title: '',
+                  key: 'remove',
+                  width: 90,
+                  render: (_, f) => <Button size="small" onClick={() => setFiles((prev) => prev.filter((x) => x.uid !== f.uid))}>Remove</Button>,
+                },
+              ]}
+            />
+          )}
+          {duplicateKinds && <Alert type="warning" showIcon message="Two workbooks have the same template type. Each type can be sent once per check." />}
+          {busy && <Progress percent={busy.percent} status="active" format={() => busy.step} />}
+          <Space>
+            <Button type="primary" onClick={validate} disabled={!files.length || duplicateKinds || busy !== null || !target || closed}>
+              Validate {files.length > 1 ? `${files.length} workbooks together` : 'workbook'}
+            </Button>
+            {files.length > 0 && !busy && <Button onClick={() => setFiles([])}>Clear</Button>}
+          </Space>
         </Space>
       </Card>
 
-      {result && <UploadResult result={result} onShowColumns={(sheet) => showColumns(result.dataset.id, sheet)} />}
+      {result && (
+        <>
+          <CheckSummary check={result.check} />
+          {result.datasets.map((r) => <DatasetResult key={r.dataset.id} r={r} onShowColumns={showColumns} />)}
+        </>
+      )}
 
       {target && (
-        <Card title={`Uploads to ${runLabel(target.run)}`} style={{ marginTop: 24 }} styles={{ body: { padding: 0 } }}>
+        <Card title={`Checks of ${runLabel(target.run)}`} style={{ marginTop: 24 }} styles={{ body: { padding: 0 } }}>
+          <Table
+            rowKey="id"
+            loading={checks.loading}
+            dataSource={checks.data || []}
+            pagination={{ pageSize: 10, hideOnSinglePage: true }}
+            scroll={{ x: true }}
+            locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No checks yet." /> }}
+            columns={[
+              { title: 'Check', dataIndex: 'checkNo', width: 80 },
+              { title: 'Result', dataIndex: 'status', render: (v) => statusTag[v] },
+              { title: 'Readiness', dataIndex: 'readiness', align: 'right', render: (v) => <span className="db-code">{(Number(v) * 100).toFixed(1)}%</span> },
+              { title: 'Rows', dataIndex: 'rows', align: 'right' },
+              { title: 'Critical', dataIndex: 'critical', align: 'right' },
+              { title: 'Warnings', dataIndex: 'warning', align: 'right' },
+              { title: 'Checked', key: 'when', render: (_, c) => `${when(c.createdAt)} by ${c.createdBy}` },
+              { title: '', key: 'open', align: 'right', render: (_, c) => <Link to={`/checks/${c.id}`}>Findings</Link> },
+            ]}
+          />
+        </Card>
+      )}
+
+      {target && (
+        <Card title="Workbooks received" style={{ marginTop: 24 }} styles={{ body: { padding: 0 } }}>
           <Table
             rowKey="id"
             loading={history.loading}
             dataSource={history.data || []}
             pagination={{ pageSize: 10, hideOnSinglePage: true }}
             scroll={{ x: true }}
-            locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Nothing uploaded to this run yet." /> }}
+            locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Nothing received for this run yet." /> }}
             columns={[
               { title: 'Template', dataIndex: 'kind', render: (v) => kindLabel[v] },
               { title: 'Version', dataIndex: 'versionNo', align: 'right' },
               { title: 'File', dataIndex: 'fileName' },
               {
-                title: 'Result',
+                title: 'Read',
                 key: 'status',
                 render: (_, d) =>
                   d.status === 'SUCCEEDED'
-                    ? <Tag color={d.warningCount ? 'orange' : 'green'}>{d.sheetCount} sheets{d.warningCount ? `, ${d.warningCount} warnings` : ''}</Tag>
+                    ? <Tag color={d.warningCount ? 'orange' : 'green'}>{d.sheetCount} sheets{d.warningCount ? `, ${d.warningCount} structure warnings` : ''}</Tag>
                     : <Tag color="red">Could not be read</Tag>,
               },
-              { title: 'Uploaded', key: 'when', render: (_, d) => `${when(d.uploadedAt)} by ${d.uploadedBy}` },
+              { title: 'Received', key: 'when', render: (_, d) => `${when(d.uploadedAt)} by ${d.uploadedBy}` },
               { title: 'SHA-256', dataIndex: 'sha256', render: (v) => <span className="db-code" style={{ whiteSpace: 'nowrap' }}>{shortHash(v)}</span> },
               {
                 title: '',
                 key: 'view',
                 align: 'right',
-                render: (_, d) =>
-                  d.status === 'SUCCEEDED' && (
-                    <Button size="small" onClick={() => showColumns(d.id, null)}>Sheets</Button>
-                  ),
+                render: (_, d) => d.status === 'SUCCEEDED' && <Button size="small" onClick={() => showColumns(d.id, null)}>Sheets</Button>,
               },
             ]}
           />
@@ -306,9 +370,7 @@ export default function Intake() {
         )}
         {drawerSheet && (
           <>
-            {drawer.sheetName && (
-              <Button style={{ marginBottom: 16 }} onClick={() => setDrawer({ ...drawer, sheetName: null })}>All sheets</Button>
-            )}
+            <Button style={{ marginBottom: 16 }} onClick={() => setDrawer({ ...drawer, sheetName: null })}>All sheets</Button>
             <Descriptions size="small" column={2} style={{ marginBottom: 16 }}>
               <Descriptions.Item label="BC table">{drawerSheet.tableName || drawerSheet.purpose || 'Not known'}</Descriptions.Item>
               <Descriptions.Item label="Table ID"><span className="db-code">{drawerSheet.tableId || '-'}</span></Descriptions.Item>

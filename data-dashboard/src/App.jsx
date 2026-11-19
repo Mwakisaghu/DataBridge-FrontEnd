@@ -4,6 +4,7 @@ import Sidebar from './components/Sidebar'
 import TopBar from './components/TopBar'
 import ControlCentre from './pages/ControlCentre'
 import Intake from './pages/Intake'
+import CheckDetail from './pages/CheckDetail'
 import SetupPage from './pages/Setup'
 import Audit from './pages/Audit'
 import { theme } from './theme'
@@ -23,6 +24,7 @@ export default function App() {
                 <Routes>
                   <Route path="/" element={<ControlCentre />} />
                   <Route path="/intake" element={<Intake />} />
+                  <Route path="/checks/:id" element={<CheckDetail />} />
                   <Route path="/setup" element={<SetupPage />} />
                   <Route path="/audit" element={<Audit />} />
                   {/* Old addresses from the first prototype */}

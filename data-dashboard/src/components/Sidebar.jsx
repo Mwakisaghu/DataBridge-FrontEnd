@@ -17,7 +17,7 @@ const { Sider } = Layout
 // The six DataBridge modules. Modules not built yet are listed so the roadmap is visible.
 const modules = [
   { key: '/', n: 1, label: 'Control Centre', icon: <ApartmentOutlined /> },
-  { key: '/intake', n: 2, label: 'Template intake', icon: <CloudUploadOutlined /> },
+  { key: '/intake', n: 2, label: 'Intake & validation', icon: <CloudUploadOutlined /> },
   { key: 'cleaning', n: 3, label: 'Cleaning', icon: <ClearOutlined />, later: 'Phase 3' },
   { key: 'reconciliation', n: 4, label: 'Reconciliation', icon: <ReconciliationOutlined />, later: 'Phase 2' },
   { key: 'integration', n: 5, label: 'Integration', icon: <DeploymentUnitOutlined />, later: 'Phase 4' },
@@ -25,7 +25,7 @@ const modules = [
 ]
 
 function selectedKey(pathname) {
-  if (pathname.startsWith('/intake')) return '/intake'
+  if (pathname.startsWith('/intake') || pathname.startsWith('/checks')) return '/intake'
   if (pathname.startsWith('/audit')) return '/audit'
   if (pathname.startsWith('/setup')) return '/setup'
   return '/'

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Alert, App, AutoComplete, Button, Card, Col, Divider, Drawer, Form, Input, InputNumber, Popconfirm, Radio, Row, Select, Space, Switch, Table, Tabs, Tag, Typography, Upload } from 'antd'
 import { DeleteOutlined, DownloadOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons'
 import PageHeader from '../components/PageHeader'
+import RulesSetup from './RulesSetup'
 import { validated } from '../formValidation'
 import LoadError from '../components/LoadError'
 import useLoad from '../hooks/useLoad'
@@ -334,6 +335,7 @@ export default function SetupPage() {
         items={[
           { key: 'general', label: 'DataBridge and retention', children: <GeneralSetup /> },
           { key: 'templates', label: 'Template Setups', children: <TemplateSetups /> },
+          { key: 'rules', label: 'Validation rules', children: <RulesSetup /> },
         ]}
       />
     </div>

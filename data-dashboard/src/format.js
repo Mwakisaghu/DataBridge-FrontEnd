@@ -26,3 +26,26 @@ export function shortHash(h) {
 
 export const kindLabel = { STATIC: 'Static', TRANSACTIONAL: 'Transactional', HR: 'HR', OTHER: 'Other' }
 export const runLabel = (run) => `${run.type === 'CUTOVER' ? 'Cutover' : 'Mock'} run ${run.runNo}`
+
+/** Template kind from a file name, the way consultants name the templates.  */
+export function kindFromName(name) {
+  const n = name.toLowerCase()
+  if (n.includes('transaction')) return 'TRANSACTIONAL'
+  if (/(^|[^a-z])hr([^a-z]|$)/.test(n)) return 'HR'
+  if (n.includes('static')) return 'STATIC'
+  return 'OTHER'
+}
+
+/** What a rule checks, in a sentence. */
+export function describeRule(r) {
+  switch (r.type) {
+    case 'REFERENCE': return `${r.field} must exist in ${r.targetSheet} (${r.targetField})`
+    case 'FORMAT': return `${r.field} must match ${r.pattern}`
+    case 'UNIQUE': return `${r.field} is unique`
+    case 'REQUIRED': return `${r.field} is required`
+    case 'SUM_EQUALS': return `${r.field} totals ${r.expected} per ${r.groupBy}`
+    case 'COMPARE': return `${r.field} ${r.operator} ${r.otherField}`
+    default: return r.field
+  }
+}
+
