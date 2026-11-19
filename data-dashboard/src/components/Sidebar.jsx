@@ -6,11 +6,14 @@ import {
   CloudUploadOutlined,
   ClearOutlined,
   ControlOutlined,
+  TeamOutlined,
   DeploymentUnitOutlined,
   ReconciliationOutlined,
 } from '@ant-design/icons'
 import { Link, useLocation } from 'react-router-dom'
+import { useSelector } from 'react-redux'
 import { colors } from '../theme'
+import { hasRole } from '../redux/sessionSlice'
 
 const { Sider } = Layout
 
@@ -28,12 +31,15 @@ function selectedKey(pathname) {
   if (pathname.startsWith('/intake') || pathname.startsWith('/checks')) return '/intake'
   if (pathname.startsWith('/audit')) return '/audit'
   if (pathname.startsWith('/setup')) return '/setup'
+  if (pathname.startsWith('/users')) return '/users'
   return '/'
 }
 
 export default function Sidebar() {
   const { pathname } = useLocation()
   const [collapsed, setCollapsed] = useState(false)
+  const user = useSelector((s) => s.session.user)
+  const showUsers = useSelector((s) => s.session.authMode === 'local') && hasRole(user, 'ADMIN')
   const items = modules.map((m) => ({
     key: m.key,
     icon: m.icon,
@@ -70,7 +76,10 @@ export default function Sidebar() {
           theme="dark"
           mode="inline"
           selectedKeys={[selectedKey(pathname)]}
-          items={[{ key: '/setup', icon: <ControlOutlined />, label: <Link to="/setup">Setup</Link> }]}
+          items={[
+            { key: '/setup', icon: <ControlOutlined />, label: <Link to="/setup">Setup</Link> },
+            ...(showUsers ? [{ key: '/users', icon: <TeamOutlined />, label: <Link to="/users">Users</Link> }] : []),
+          ]}
         />
       </div>
     </Sider>

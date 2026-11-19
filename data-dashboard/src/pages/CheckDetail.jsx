@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useSelector } from 'react-redux'
+import { hasRole, selectWho } from '../redux/sessionSlice'
 import { App, Button, Card, Form, Input, Modal, Select, Space, Table, Tag, Tooltip, Typography } from 'antd'
 import { DownloadOutlined } from '@ant-design/icons'
 import PageHeader from '../components/PageHeader'
@@ -106,7 +107,11 @@ function WaiverDialog({ dialog, onClose, onDone }) {
 
 export default function CheckDetail() {
   const { id } = useParams()
-  const actor = useSelector((s) => s.session.actor)
+  const who = useSelector(selectWho)
+  const user = useSelector((s) => s.session.user)
+  const local = useSelector((s) => s.session.authMode === 'local')
+  const canDecide = !local || hasRole(user, 'REVIEWER')
+  const canRequest = !local || hasRole(user, 'CONSULTANT')
   const { message } = App.useApp()
   const check = useLoad(() => getCheck(id), [id])
   const [filter, setFilter] = useState({ severity: undefined, status: undefined, sheet: undefined, ruleType: undefined })
@@ -189,9 +194,10 @@ export default function CheckDetail() {
               key: 'act',
               align: 'right',
               render: (_, f) => {
-                if (f.status === 'OPEN') return <Button size="small" onClick={() => setDialog({ finding: f, mode: 'request' })}>Waive</Button>
+                if (f.status === 'OPEN') return canRequest && <Button size="small" onClick={() => setDialog({ finding: f, mode: 'request' })}>Waive</Button>
                 if (f.status === 'WAIVER_REQUESTED') {
-                  const own = (f.requestedBy || '').toLowerCase() === (actor || 'local').toLowerCase()
+                  const own = (f.requestedBy || '').toLowerCase() === who.toLowerCase()
+                  if (!own && !canDecide) return <Typography.Text type="secondary">Awaiting a reviewer</Typography.Text>
                   return own ? <Typography.Text type="secondary">Awaiting another reviewer</Typography.Text> : (
                     <Space>
                       <Button size="small" type="primary" onClick={() => setDialog({ finding: f, mode: 'approve' })}>Approve</Button>

@@ -40,3 +40,19 @@ describe('API client', () => {
     expect(toApiError({ request: {} }).message).toBe(SERVER_DOWN)
   })
 })
+
+describe('sessions', () => {
+  it('marks every call as coming from the app, and returns to sign-in when the session ends', async () => {
+    const { signedIn } = await import('../redux/sessionSlice')
+    store.dispatch(signedIn({ user: { username: 'harry', roles: [] }, authMode: 'local' }))
+    let header
+    await expect(http.get('/overview', {
+      adapter: async (config) => {
+        header = config.headers['X-DataBridge-Client']
+        return respond(401, { status: 'ERROR', error: 'Sign in to continue' })(config)
+      },
+    })).rejects.toMatchObject({ status: 401 })
+    expect(header).toBe('web')
+    expect(store.getState().session.status).toBe('signedOut')
+  })
+})

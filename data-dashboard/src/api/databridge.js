@@ -96,3 +96,14 @@ export const downloadRegister = (checkId) => download(`/checks/${enc(checkId)}/r
 export const getRules = () => data(http.get('/setup/rules'))
 export const putRule = (rule) => data(http.put(`/setup/rules/${enc(rule.id)}`, rule))
 export const deleteRule = (id) => data(http.delete(`/setup/rules/${enc(id)}`))
+
+// Sign-in and users
+export const me = () => data(http.get('/auth/me'))
+export const login = (username, password) => data(http.post('/auth/login', { username, password }))
+export const logout = () => data(http.post('/auth/logout'))
+export const changePassword = (currentPassword, newPassword) =>
+  data(http.post('/auth/password', { currentPassword, newPassword }))
+export const getUsers = () => data(http.get('/users'))
+export const createUser = (body) => data(http.post('/users', body))
+export const updateUser = (id, body) => data(http.put(`/users/${enc(id)}`, body))
+export const resetUserPassword = (id) => data(http.post(`/users/${enc(id)}/reset-password`))

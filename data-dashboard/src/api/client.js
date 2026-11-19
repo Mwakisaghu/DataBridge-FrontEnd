@@ -1,5 +1,6 @@
 import axios from 'axios'
 import store from '../redux/store'
+import { signedOut } from '../redux/sessionSlice'
 
 /** A failed call, with a message written for the person using the UI. */
 export class ApiError extends Error {
@@ -34,11 +35,23 @@ export const http = axios.create({ baseURL: '/api' })
 
 http.interceptors.request.use((config) => {
   config.headers = config.headers || {}
+  // Marks the call as coming from this app: the server refuses changes without it, which
+  // stops other web sites from posting to DataBridge with the user's cookie.
+  config.headers['X-DataBridge-Client'] = 'web'
+  // Development mode (no sign-in) only; ignored by the server when sign-in is on.
   config.headers['X-DataBridge-User'] = store.getState().session.actor || 'local'
   return config
 })
 
 http.interceptors.response.use(
   (response) => response,
-  (err) => Promise.reject(toApiError(err)),
+  (err) => {
+    const e = toApiError(err)
+    // A session that ran out: back to the sign-in screen. A failed sign-in stays on it.
+    const url = err?.config?.url || ''
+    if (e.status === 401 && !url.startsWith('/auth/login') && store.getState().session.status === 'signedIn') {
+      store.dispatch(signedOut())
+    }
+    return Promise.reject(e)
+  },
 )

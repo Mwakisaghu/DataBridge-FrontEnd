@@ -7,6 +7,8 @@ import Intake from './pages/Intake'
 import CheckDetail from './pages/CheckDetail'
 import SetupPage from './pages/Setup'
 import Audit from './pages/Audit'
+import Users from './pages/Users'
+import AuthGate from './components/AuthGate'
 import { theme } from './theme'
 
 const { Content } = Layout
@@ -15,6 +17,7 @@ export default function App() {
   return (
     <ConfigProvider theme={theme}>
       <AntApp>
+        <AuthGate>
         <BrowserRouter>
           <Layout style={{ minHeight: '100vh' }}>
             <Sidebar />
@@ -27,6 +30,7 @@ export default function App() {
                   <Route path="/checks/:id" element={<CheckDetail />} />
                   <Route path="/setup" element={<SetupPage />} />
                   <Route path="/audit" element={<Audit />} />
+                  <Route path="/users" element={<Users />} />
                   {/* Old addresses from the first prototype */}
                   <Route path="/validations" element={<Navigate to="/intake" replace />} />
                   <Route path="/logs" element={<Navigate to="/audit" replace />} />
@@ -36,6 +40,7 @@ export default function App() {
             </Layout>
           </Layout>
         </BrowserRouter>
+        </AuthGate>
       </AntApp>
     </ConfigProvider>
   )

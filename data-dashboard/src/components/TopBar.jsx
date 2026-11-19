@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { Badge, Button, Grid, Input, Layout, Popover, Space, Tooltip, Typography } from 'antd'
-import { UserOutlined } from '@ant-design/icons'
-import { health } from '../api/databridge'
-import { setActor } from '../redux/sessionSlice'
+import { Badge, Button, Dropdown, Grid, Input, Layout, Modal, Popover, Space, Tooltip, Typography } from 'antd'
+import { DownOutlined, UserOutlined } from '@ant-design/icons'
+import { health, logout } from '../api/databridge'
+import { setActor, signedOut } from '../redux/sessionSlice'
+import ChangePassword from '../pages/ChangePassword'
 
 const { Header } = Layout
 const POLL_MS = 15000
@@ -49,7 +50,7 @@ function ActorPicker({ compact }) {
   const content = (
     <Space direction="vertical" style={{ width: 260 }}>
       <Typography.Text type="secondary">
-        Your name goes into the audit trail with every change. Sign-in replaces this later.
+        Sign-in is off (development mode). Your name goes into the audit trail with every change.
       </Typography.Text>
       <Input
         aria-label="Your name"
@@ -74,7 +75,39 @@ function ActorPicker({ compact }) {
   )
 }
 
+const roleNames = { ADMIN: 'Administrator', CONSULTANT: 'Consultant', REVIEWER: 'Reviewer', FINANCE: 'Finance', VIEWER: 'Viewer' }
+
+/** The signed-in user, with change-password and sign-out. */
+function UserMenu({ compact }) {
+  const user = useSelector((s) => s.session.user)
+  const dispatch = useDispatch()
+  const [changing, setChanging] = useState(false)
+  const items = [
+    { key: 'who', disabled: true, label: <span>{user.username} · {user.roles.map((r) => roleNames[r] || r).join(', ')}</span> },
+    { type: 'divider' },
+    { key: 'password', label: 'Change password' },
+    { key: 'out', label: 'Sign out' },
+  ]
+  const onClick = ({ key }) => {
+    if (key === 'password') setChanging(true)
+    if (key === 'out') logout().finally(() => dispatch(signedOut()))
+  }
+  return (
+    <>
+      <Dropdown menu={{ items, onClick }} trigger={['click']} placement="bottomRight">
+        <Button icon={<UserOutlined />} aria-label={compact ? `Signed in as ${user.displayName}` : undefined}>
+          {compact ? null : <>{user.displayName} <DownOutlined /></>}
+        </Button>
+      </Dropdown>
+      <Modal open={changing} title="Change password" footer={null} onCancel={() => setChanging(false)} destroyOnClose>
+        <ChangePassword onDone={() => setChanging(false)} />
+      </Modal>
+    </>
+  )
+}
+
 export default function TopBar() {
+  const local = useSelector((s) => s.session.authMode === 'local')
   const status = useServerStatus()
   const [badge, text] = statusText[status.state]
   const wide = Grid.useBreakpoint().md
@@ -95,7 +128,7 @@ export default function TopBar() {
           <Badge status={badge} text={wide ? text : null} />
         </span>
       </Tooltip>
-      <ActorPicker compact={!wide} />
+      {local ? <UserMenu compact={!wide} /> : <ActorPicker compact={!wide} />}
     </Header>
   )
 }
