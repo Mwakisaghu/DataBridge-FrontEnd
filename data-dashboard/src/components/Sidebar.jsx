@@ -6,6 +6,7 @@ import {
   CloudUploadOutlined,
   ClearOutlined,
   ControlOutlined,
+  HistoryOutlined,
   TeamOutlined,
   DeploymentUnitOutlined,
   ReconciliationOutlined,
@@ -24,12 +25,13 @@ const modules = [
   { key: '/cleaning', n: 3, label: 'Cleaning', icon: <ClearOutlined /> },
   { key: '/reconciliation', n: 4, label: 'Reconciliation', icon: <ReconciliationOutlined /> },
   { key: '/integration', n: 5, label: 'Integration', icon: <DeploymentUnitOutlined /> },
-  { key: '/audit', n: 6, label: 'Audit & retention', icon: <AuditOutlined /> },
+  { key: '/reports', n: 6, label: 'Reports & sign-off', icon: <AuditOutlined /> },
 ]
 
 function selectedKey(pathname) {
   if (pathname.startsWith('/intake') || pathname.startsWith('/checks')) return '/intake'
   if (pathname.startsWith('/audit')) return '/audit'
+  if (pathname.startsWith('/reports')) return '/reports'
   if (pathname.startsWith('/reconciliation')) return '/reconciliation'
   if (pathname.startsWith('/cleaning')) return '/cleaning'
   if (pathname.startsWith('/integration')) return '/integration'
@@ -80,6 +82,7 @@ export default function Sidebar() {
           mode="inline"
           selectedKeys={[selectedKey(pathname)]}
           items={[
+            { key: '/audit', icon: <HistoryOutlined />, label: <Link to="/audit">Audit &amp; retention</Link> },
             { key: '/setup', icon: <ControlOutlined />, label: <Link to="/setup">Setup</Link> },
             ...(showUsers ? [{ key: '/users', icon: <TeamOutlined />, label: <Link to="/users">Users</Link> }] : []),
           ]}

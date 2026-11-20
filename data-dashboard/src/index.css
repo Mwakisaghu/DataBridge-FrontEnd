@@ -42,3 +42,11 @@ html, body, #root {
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
+
+/* Printing the migration certificate: only the certificate, no app chrome. */
+@media print {
+  .ant-layout-sider, .ant-layout-header, .db-no-print { display: none !important; }
+  .db-page { padding: 0 !important; }
+  .db-certificate { border-width: 1px !important; }
+  body { background: #fff !important; }
+}

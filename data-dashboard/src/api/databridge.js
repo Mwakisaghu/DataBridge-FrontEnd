@@ -203,3 +203,13 @@ export const putControl = (c) => data(http.put(`/setup/reconciliation/controls/$
 export const deleteControl = (id) => data(http.delete(`/setup/reconciliation/controls/${enc(id)}`))
 export const putTrialBalance = (tb) => data(http.put('/setup/reconciliation/trial-balance', tb))
 export const resetTrialBalance = () => data(http.delete('/setup/reconciliation/trial-balance'))
+
+// Reports and sign-off (module 6)
+export const getRunSummary = (runId) => data(http.get(`/runs/${enc(runId)}/summary`))
+export const requestSignOff = (runId, note) => data(http.post(`/runs/${enc(runId)}/signoff`, { note }))
+export const decideSignOff = (runId, approve, note) => data(http.post(`/runs/${enc(runId)}/signoff/decision`, { approve, note }))
+export const downloadSignOffPack = (runId) => download(`/runs/${enc(runId)}/signoff-pack.xlsx`, 'signoff-pack.xlsx')
+export const downloadAudit = (params) => {
+  const q = new URLSearchParams(Object.entries(params || {}).filter(([, v]) => v !== undefined && v !== null && v !== '')).toString()
+  return download(`/audit.xlsx${q ? `?${q}` : ''}`, 'audit-trail.xlsx')
+}

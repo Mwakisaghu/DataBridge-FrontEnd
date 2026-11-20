@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { App, Button, Card, Popconfirm, Select, Space, Table, Tag, Typography } from 'antd'
-import { ReloadOutlined } from '@ant-design/icons'
+import { DownloadOutlined, ReloadOutlined } from '@ant-design/icons'
 import PageHeader from '../components/PageHeader'
 import LoadError from '../components/LoadError'
 import useLoad from '../hooks/useLoad'
-import { getAudit, getSetup, purgeAll } from '../api/databridge'
+import { downloadAudit, getAudit, getSetup, purgeAll } from '../api/databridge'
 import { bytes, when } from '../format'
 
 const areas = [
@@ -73,6 +73,7 @@ export function ClientFiles({ onPurged }) {
 }
 
 export default function Audit() {
+  const { message } = App.useApp()
   const [area, setArea] = useState('')
   const [limit, setLimit] = useState(100)
   const audit = useLoad(() => getAudit({ entityType: area || undefined, limit }), [area, limit])
@@ -95,6 +96,9 @@ export default function Audit() {
               style={{ width: 130 }}
               options={[50, 100, 500, 1000].map((n) => ({ value: n, label: `Latest ${n}` }))}
             />
+            <Button icon={<DownloadOutlined />} onClick={() => downloadAudit({ entityType: area || undefined, limit }).catch((e) => message.error(e.message))}>
+              Export
+            </Button>
             <Button icon={<ReloadOutlined />} onClick={audit.reload} aria-label="Refresh" />
           </Space>
         }
