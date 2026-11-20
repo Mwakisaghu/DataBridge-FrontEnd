@@ -1,12 +1,52 @@
-# React + Vite
+# DataBridge UI
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React 18 + Vite + Ant Design front end for the DataBridge server
+([DataBridge-Java](https://github.com/Mwakisaghu/DataBridge-Java)). The server does all the work and keeps
+no client data; this UI only shows results and sends uploads straight through.
 
-Currently, two official plugins are available:
+## Run
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+```bash
+npm install
+# Server on its default port 8085
+node node_modules/vite/bin/vite.js                   # same as: npm run dev
+# Server on another port
+DATABRIDGE_API=http://127.0.0.1:8086 node node_modules/vite/bin/vite.js
+```
 
-## Expanding the ESLint configuration
+Open http://localhost:5173. The dev server forwards `/api` and `/health` to the DataBridge server, so the
+browser sees one origin and the sign-in cookie just works.
 
-If you are developing a production application, we recommend using TypeScript and enable type-aware lint rules. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+On a new database the server prints a temporary `admin` password once in its console. Sign in with
+it, choose your own, and add people under **Users**. If the server runs with `DATABRIDGE_AUTH=none`
+(development, no sign-in), the top bar asks for your name instead.
+
+## Check
+
+```bash
+node node_modules/vitest/vitest.mjs run     # tests (npm test)
+npx eslint . --max-warnings 0               # lint
+node node_modules/vite/bin/vite.js build    # production build into dist/
+```
+
+`npm run dev` fails on some Windows Git Bash set-ups with "Cannot read properties of undefined
+(reading 'stdin')"; the `node node_modules/...` forms above avoid it.
+
+## Production
+
+The DataBridge server serves the built UI itself: build `dist/` and point the server at it with
+`DATABRIDGE_UI_DIR`, or use the Docker image in DataBridge-Java, which builds both (see its
+`docs/deployment.md`). The UI then needs no Node and talks to the API on the same origin.
+
+## Screens
+
+Control Centre, Intake & validation (with check details and waivers), Cleaning, Reconciliation,
+Integration, Reports & sign-off (with the printable migration certificate), Audit & retention,
+Setup (DataBridge and retention, Template Setups, Validation rules, Cleaning, Reconciliation,
+Business Central) and Users. Buttons follow the signed-in user's roles; the server enforces them.
+
+## Layout
+
+- `src/api/` — `client.js` (axios, error messages, session headers) and `databridge.js` (one function per endpoint)
+- `src/pages/` — one file per screen; `src/components/` — shared pieces, including `AuthGate`
+- `src/redux/sessionSlice.js` — who is signed in and their roles

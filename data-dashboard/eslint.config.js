@@ -6,6 +6,11 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 export default [
   { ignores: ['dist'] },
   {
+    // Build and test configuration runs in Node, not the browser.
+    files: ['vite.config.js', 'src/test/**/*.js'],
+    languageOptions: { globals: { ...globals.node } },
+  },
+  {
     files: ['**/*.{js,jsx}'],
     languageOptions: {
       ecmaVersion: 2020,

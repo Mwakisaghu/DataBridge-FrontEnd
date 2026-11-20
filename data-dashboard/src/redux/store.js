@@ -1,10 +1,8 @@
-import {configureStore} from '@reduxjs/toolkit';
-import migrationsHandler from './migrationsSlice';
+import { configureStore } from '@reduxjs/toolkit'
+import session from './sessionSlice'
 
 export const store = configureStore({
-  reducer: {
-    migrations: migrationsHandler,
-    },
-});
+  reducer: { session },
+})
 
-export default store;
+export default store
