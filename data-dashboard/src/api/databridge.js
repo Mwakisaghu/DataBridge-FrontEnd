@@ -1,4 +1,4 @@
-import { http } from './client'
+import { ApiError, http } from './client'
 
 // One function per server endpoint. Pages import from here, never from axios directly,
 // so tests can replace this module.
@@ -80,16 +80,75 @@ export const decideWaiver = (findingId, approve, note) =>
   data(http.post(`/findings/${enc(findingId)}/waiver/decision`, { approve, note }))
 
 /** Downloads a file the server generates (such as the exception register) and saves it. */
-export async function download(path, fallbackName) {
-  const r = await http.get(path, { responseType: 'blob' })
+/** A file response's name from Content-Disposition. */
+function fileNameOf(r, fallback) {
   const cd = r.headers?.['content-disposition'] || ''
-  const name = /filename="([^"]+)"/.exec(cd)?.[1] || fallbackName
+  return /filename="([^"]+)"/.exec(cd)?.[1] || fallback
+}
+
+/** Hands a blob to the browser as a download. */
+export function saveBlob(blob, name) {
   const a = document.createElement('a')
-  a.href = URL.createObjectURL(r.data)
+  a.href = URL.createObjectURL(blob)
   a.download = name
   a.click()
   URL.revokeObjectURL(a.href)
 }
+
+/** A refused file request's body is JSON inside a blob: read the server's message out of it. */
+function blobText(blob) {
+  if (typeof blob.text === 'function') return blob.text()
+  return new Promise((resolve, reject) => {
+    const r = new FileReader()
+    r.onload = () => resolve(r.result)
+    r.onerror = () => reject(r.error)
+    r.readAsText(blob)
+  })
+}
+
+async function blobError(e) {
+  if (e instanceof ApiError && e.body instanceof Blob) {
+    try {
+      const msg = JSON.parse(await blobText(e.body))?.error
+      if (msg) return new ApiError(msg, e.status, null)
+    } catch {
+      // not JSON: keep the generic message
+    }
+  }
+  return e
+}
+
+export async function download(path, fallbackName) {
+  try {
+    const r = await http.get(path, { responseType: 'blob' })
+    saveBlob(r.data, fileNameOf(r, fallbackName))
+  } catch (e) {
+    throw await blobError(e)
+  }
+}
+
+// Cleaning (module 3)
+/** Sends a workbook to be cleaned; resolves to the cleaned file and the id of its change log. */
+export async function cleanWorkbook(runId, kind, file, onProgress) {
+  try {
+    const r = await http.post(`/runs/${enc(runId)}/clean`, file, {
+      params: { kind, fileName: file.name },
+      headers: { 'Content-Type': 'application/octet-stream' },
+      responseType: 'blob',
+      onUploadProgress: (e) => {
+        if (onProgress && e.total) onProgress(Math.round((e.loaded / e.total) * 100))
+      },
+    })
+    return { blob: r.data, fileName: fileNameOf(r, `${file.name} (cleaned).xlsx`), jobId: r.headers?.['x-databridge-cleaning-job'] }
+  } catch (e) {
+    throw await blobError(e)
+  }
+}
+export const getCleaningJobs = (runId) => data(http.get(`/runs/${enc(runId)}/cleaning-jobs`))
+export const getCleaningJob = (id) => data(http.get(`/cleaning-jobs/${enc(id)}`))
+export const getCleaningRules = () => data(http.get('/setup/cleaning'))
+export const putCleaningRule = (rule) => data(http.put(`/setup/cleaning/${enc(rule.id)}`, rule))
+export const deleteCleaningRule = (id) => data(http.delete(`/setup/cleaning/${enc(id)}`))
 export const downloadRegister = (checkId) => download(`/checks/${enc(checkId)}/register.xlsx`, 'exception-register.xlsx')
 
 // Rule Setup

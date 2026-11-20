@@ -9,6 +9,7 @@ import SetupPage from './pages/Setup'
 import Audit from './pages/Audit'
 import Users from './pages/Users'
 import Reconciliation from './pages/Reconciliation'
+import Cleaning from './pages/Cleaning'
 import AuthGate from './components/AuthGate'
 import { theme } from './theme'
 
@@ -32,6 +33,7 @@ export default function App() {
                   <Route path="/setup" element={<SetupPage />} />
                   <Route path="/audit" element={<Audit />} />
                   <Route path="/reconciliation" element={<Reconciliation />} />
+                  <Route path="/cleaning" element={<Cleaning />} />
                   <Route path="/users" element={<Users />} />
                   {/* Old addresses from the first prototype */}
                   <Route path="/validations" element={<Navigate to="/intake" replace />} />
