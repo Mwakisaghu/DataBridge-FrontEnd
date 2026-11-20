@@ -7,8 +7,10 @@ import { DownloadOutlined } from '@ant-design/icons'
 import PageHeader from '../components/PageHeader'
 import LoadError from '../components/LoadError'
 import CheckSummary from '../components/CheckSummary'
+import WaiverDialog from '../components/WaiverDialog'
+import ReconciliationPanel from '../components/ReconciliationPanel'
 import useLoad from '../hooks/useLoad'
-import { decideWaiver, downloadRegister, getCheck, getFindings, requestWaiver } from '../api/databridge'
+import { downloadRegister, getCheck, getFindings } from '../api/databridge'
 import { kindLabel, when } from '../format'
 
 const severityTag = {
@@ -50,58 +52,6 @@ export function SheetQuality({ sheets }) {
         { title: 'Warnings', dataIndex: 'warning', align: 'right' },
       ]}
     />
-  )
-}
-
-function WaiverDialog({ dialog, onClose, onDone }) {
-  const { message } = App.useApp()
-  const [form] = Form.useForm()
-  const [busy, setBusy] = useState(false)
-  if (!dialog) return null
-  const { finding, mode } = dialog
-  const submit = async () => {
-    let values
-    try {
-      values = await form.validateFields()
-    } catch {
-      return
-    }
-    setBusy(true)
-    try {
-      if (mode === 'request') await requestWaiver(finding.id, values.text)
-      else await decideWaiver(finding.id, mode === 'approve', values.text)
-      message.success(mode === 'request' ? 'Waiver requested' : mode === 'approve' ? 'Waiver approved' : 'Waiver rejected')
-      form.resetFields()
-      onDone()
-    } catch (e) {
-      message.error(e.message)
-    } finally {
-      setBusy(false)
-    }
-  }
-  const title = { request: 'Request a waiver', approve: 'Approve the waiver', reject: 'Reject the waiver' }[mode]
-  return (
-    <Modal open title={title} okText={title} onOk={submit} confirmLoading={busy} onCancel={onClose} destroyOnClose
-      okButtonProps={{ danger: mode === 'reject' }}>
-      <Typography.Paragraph>
-        {finding.sheet} row {finding.rowNo}, {finding.field}: {finding.message}
-      </Typography.Paragraph>
-      {mode !== 'request' && (
-        <Typography.Paragraph type="secondary">Requested by {finding.requestedBy}: {finding.waiverReason}</Typography.Paragraph>
-      )}
-      <Form form={form} layout="vertical" requiredMark={false}>
-        <Form.Item
-          name="text"
-          label={mode === 'request' ? 'Why this can be accepted as it is' : mode === 'approve' ? 'Note (optional)' : 'Why the waiver is rejected'}
-          rules={mode === 'approve' ? [] : [{ required: true, min: mode === 'request' ? 10 : 1, message: mode === 'request' ? 'At least 10 characters' : 'Give a reason' }]}
-        >
-          <Input.TextArea rows={3} maxLength={500} showCount />
-        </Form.Item>
-      </Form>
-      {mode === 'request' && (
-        <Typography.Text type="secondary">A different person must approve it. That is the maker-checker rule.</Typography.Text>
-      )}
-    </Modal>
   )
 }
 
@@ -147,6 +97,7 @@ export default function CheckDetail() {
       />
       <LoadError error={check.error || findings.error} onRetry={reload} />
       {c && <CheckSummary check={c} linkToFindings={false} />}
+      {c && <ReconciliationPanel checkId={c.id} onChanged={reload} />}
       {c && (
         <Card title="Quality by sheet" style={{ marginTop: 24 }} styles={{ body: { padding: 0 } }}>
           <SheetQuality sheets={c.sheets} />

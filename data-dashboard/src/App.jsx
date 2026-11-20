@@ -8,6 +8,7 @@ import CheckDetail from './pages/CheckDetail'
 import SetupPage from './pages/Setup'
 import Audit from './pages/Audit'
 import Users from './pages/Users'
+import Reconciliation from './pages/Reconciliation'
 import AuthGate from './components/AuthGate'
 import { theme } from './theme'
 
@@ -30,6 +31,7 @@ export default function App() {
                   <Route path="/checks/:id" element={<CheckDetail />} />
                   <Route path="/setup" element={<SetupPage />} />
                   <Route path="/audit" element={<Audit />} />
+                  <Route path="/reconciliation" element={<Reconciliation />} />
                   <Route path="/users" element={<Users />} />
                   {/* Old addresses from the first prototype */}
                   <Route path="/validations" element={<Navigate to="/intake" replace />} />

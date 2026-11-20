@@ -49,3 +49,11 @@ export function describeRule(r) {
   }
 }
 
+
+const moneyFormat = new Intl.NumberFormat('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+/** An amount with two decimals and thousands separators; a dash when there is none. */
+export function money(v) {
+  if (v === null || v === undefined || v === '') return '–'
+  return moneyFormat.format(Number(v))
+}

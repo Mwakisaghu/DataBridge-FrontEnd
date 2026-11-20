@@ -22,7 +22,7 @@ const modules = [
   { key: '/', n: 1, label: 'Control Centre', icon: <ApartmentOutlined /> },
   { key: '/intake', n: 2, label: 'Intake & validation', icon: <CloudUploadOutlined /> },
   { key: 'cleaning', n: 3, label: 'Cleaning', icon: <ClearOutlined />, later: 'Phase 3' },
-  { key: 'reconciliation', n: 4, label: 'Reconciliation', icon: <ReconciliationOutlined />, later: 'Phase 2' },
+  { key: '/reconciliation', n: 4, label: 'Reconciliation', icon: <ReconciliationOutlined /> },
   { key: 'integration', n: 5, label: 'Integration', icon: <DeploymentUnitOutlined />, later: 'Phase 4' },
   { key: '/audit', n: 6, label: 'Audit & retention', icon: <AuditOutlined /> },
 ]
@@ -30,6 +30,7 @@ const modules = [
 function selectedKey(pathname) {
   if (pathname.startsWith('/intake') || pathname.startsWith('/checks')) return '/intake'
   if (pathname.startsWith('/audit')) return '/audit'
+  if (pathname.startsWith('/reconciliation')) return '/reconciliation'
   if (pathname.startsWith('/setup')) return '/setup'
   if (pathname.startsWith('/users')) return '/users'
   return '/'

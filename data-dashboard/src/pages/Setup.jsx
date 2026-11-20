@@ -3,6 +3,7 @@ import { Alert, App, AutoComplete, Button, Card, Col, Divider, Drawer, Form, Inp
 import { DeleteOutlined, DownloadOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons'
 import PageHeader from '../components/PageHeader'
 import RulesSetup from './RulesSetup'
+import ReconSetup from './ReconSetup'
 import { validated } from '../formValidation'
 import LoadError from '../components/LoadError'
 import useLoad from '../hooks/useLoad'
@@ -336,6 +337,7 @@ export default function SetupPage() {
           { key: 'general', label: 'DataBridge and retention', children: <GeneralSetup /> },
           { key: 'templates', label: 'Template Setups', children: <TemplateSetups /> },
           { key: 'rules', label: 'Validation rules', children: <RulesSetup /> },
+          { key: 'reconciliation', label: 'Reconciliation', children: <ReconSetup /> },
         ]}
       />
     </div>

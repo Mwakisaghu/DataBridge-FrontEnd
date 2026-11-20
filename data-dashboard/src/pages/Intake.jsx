@@ -8,33 +8,11 @@ import useLoad from '../hooks/useLoad'
 import { addSubmissionFile, cancelSubmission, getChecks, getDatasets, getOverview, getSchema, openSubmission, processSubmission } from '../api/databridge'
 import CheckSummary from '../components/CheckSummary'
 import { statusTag } from '../components/statusTags'
-import { bytes, day, kindFromName, kindLabel, runLabel, shortHash, when } from '../format'
+import { bytes, kindFromName, kindLabel, runLabel, shortHash, when } from '../format'
+import { findRun, runOptions } from '../runs'
 
 const kinds = Object.entries(kindLabel).map(([value, label]) => ({ value, label }))
 
-
-/** client > project > run options; closed runs can be viewed but not uploaded to. */
-function runOptions(overview) {
-  return overview.map((c) => ({
-    value: c.client.id,
-    label: c.client.name,
-    children: c.projects.map((p) => ({
-      value: p.project.id,
-      label: p.project.name,
-      children: p.runs.map((r) => ({
-        value: r.run.id,
-        label: `${runLabel(r.run)}, cutoff ${day(r.run.cutoffDate)}${r.run.state === 'CLOSED' ? ' (closed)' : ''}`,
-      })),
-    })),
-  }))
-}
-
-function findRun(overview, runId) {
-  for (const c of overview) for (const p of c.projects) for (const r of p.runs) {
-    if (r.run.id === runId) return { client: c.client, project: p.project, run: r.run }
-  }
-  return null
-}
 
 const typeText = (f) => {
   const t = f.type.charAt(0) + f.type.slice(1).toLowerCase()

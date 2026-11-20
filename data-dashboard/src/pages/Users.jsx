@@ -18,9 +18,10 @@ const ROLES = [
 ]
 const roleLabel = Object.fromEntries(ROLES.map((r) => [r.value, r.label]))
 
-function RoleBoxes() {
+/** Form.Item passes value and onChange to its direct child; hand them to the group. */
+function RoleBoxes({ value, onChange }) {
   return (
-    <Checkbox.Group style={{ display: 'grid', gap: 8 }}>
+    <Checkbox.Group style={{ display: 'grid', gap: 8 }} value={value} onChange={onChange}>
       {ROLES.map((r) => (
         <Checkbox key={r.value} value={r.value}>
           <strong>{r.label}</strong> <Typography.Text type="secondary">{r.help}</Typography.Text>
