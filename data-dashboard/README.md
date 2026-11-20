@@ -32,6 +32,19 @@ node node_modules/vite/bin/vite.js build    # production build into dist/
 `npm run dev` fails on some Windows Git Bash set-ups with "Cannot read properties of undefined
 (reading 'stdin')"; the `node node_modules/...` forms above avoid it.
 
+## Production
+
+The DataBridge server serves the built UI itself: build `dist/` and point the server at it with
+`DATABRIDGE_UI_DIR`, or use the Docker image in DataBridge-Java, which builds both (see its
+`docs/deployment.md`). The UI then needs no Node and talks to the API on the same origin.
+
+## Screens
+
+Control Centre, Intake & validation (with check details and waivers), Cleaning, Reconciliation,
+Integration, Reports & sign-off (with the printable migration certificate), Audit & retention,
+Setup (DataBridge and retention, Template Setups, Validation rules, Cleaning, Reconciliation,
+Business Central) and Users. Buttons follow the signed-in user's roles; the server enforces them.
+
 ## Layout
 
 - `src/api/` — `client.js` (axios, error messages, session headers) and `databridge.js` (one function per endpoint)
