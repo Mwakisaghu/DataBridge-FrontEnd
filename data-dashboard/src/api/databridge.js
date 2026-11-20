@@ -127,6 +127,34 @@ export async function download(path, fallbackName) {
   }
 }
 
+/** Posts a workbook to a file-producing endpoint; resolves to the returned file and the job id header. */
+async function fileJob(path, kind, file, jobHeader, fallbackName, onProgress) {
+  try {
+    const r = await http.post(path, file, {
+      params: { kind, fileName: file.name },
+      headers: { 'Content-Type': 'application/octet-stream' },
+      responseType: 'blob',
+      onUploadProgress: (e) => {
+        if (onProgress && e.total) onProgress(Math.round((e.loaded / e.total) * 100))
+      },
+    })
+    return { blob: r.data, fileName: fileNameOf(r, fallbackName), jobId: r.headers?.[jobHeader] }
+  } catch (e) {
+    throw await blobError(e)
+  }
+}
+
+// Integration (module 5)
+export const buildPackage = (runId, kind, file, onProgress) =>
+  fileJob(`/runs/${enc(runId)}/package`, kind, file, 'x-databridge-package-job', `${file.name} (import package).xlsx`, onProgress)
+export const getPackages = (runId) => data(http.get(`/runs/${enc(runId)}/packages`))
+export const getImports = (runId) => data(http.get(`/runs/${enc(runId)}/imports`))
+export const recordImport = (runId, sheet, body) => data(http.put(`/runs/${enc(runId)}/imports/${enc(sheet)}`, body))
+export const verifyImports = (runId) => data(http.post(`/runs/${enc(runId)}/imports/verify`))
+export const getIntegrationSetup = () => data(http.get('/setup/integration'))
+export const putIntegrationSetup = (setup) => data(http.put('/setup/integration', setup))
+export const testIntegration = () => data(http.post('/setup/integration/test'))
+
 // Cleaning (module 3)
 /** Sends a workbook to be cleaned; resolves to the cleaned file and the id of its change log. */
 export async function cleanWorkbook(runId, kind, file, onProgress) {

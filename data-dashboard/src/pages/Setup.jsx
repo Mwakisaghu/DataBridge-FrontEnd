@@ -5,6 +5,7 @@ import PageHeader from '../components/PageHeader'
 import RulesSetup from './RulesSetup'
 import ReconSetup from './ReconSetup'
 import CleaningSetup from './CleaningSetup'
+import IntegrationSetup from './IntegrationSetup'
 import { validated } from '../formValidation'
 import LoadError from '../components/LoadError'
 import useLoad from '../hooks/useLoad'
@@ -340,6 +341,7 @@ export default function SetupPage() {
           { key: 'rules', label: 'Validation rules', children: <RulesSetup /> },
           { key: 'cleaning', label: 'Cleaning', children: <CleaningSetup /> },
           { key: 'reconciliation', label: 'Reconciliation', children: <ReconSetup /> },
+          { key: 'integration', label: 'Business Central', children: <IntegrationSetup /> },
         ]}
       />
     </div>
